@@ -1,6 +1,15 @@
+// Так, в цело, нормально. Есть несколько замечаний:
+
+// 1) Не нужно в post создавать сразу несколько сущностей. Создавай только одну.
+
+// 2) В ответ на post возвращай созданную сущность в виде json.
+
+// 3) В ответ на get возвращай сущности в виде json (получится массив сущностей)
+
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 
@@ -9,44 +18,39 @@ import (
 
 var task string
 
-func GetHandler(w http.ResponseWriter, r *http.Request) {
-	// GET handler для возврата приветствия с задачей
-
-	if task == "" {
-		fmt.Fprintf(w, "Hello, no task set!")
-	} else {
-		fmt.Fprintf(w, "Hello, %s!", task)
-	}
-}
-
 func GetMessage(w http.ResponseWriter, r *http.Request) {
 	var messages []Message // Слайс для хранения записей
 
-	result := DB.Find(&messages)
-	if result.Error != nil {
-		fmt.Println(w, "Error fetching messages:", http.StatusInternalServerError)
+	// Получаем все сообщения из БД
+	if result := DB.Find(&messages); result.Error != nil {
+		http.Error(w, "Ошибка получения сообщений", http.StatusInternalServerError)
 		return
 	}
 
-	// Печатаем все меседжи
-	for _, message := range messages {
-		DB.Find(&message)
-		fmt.Fprintf(w, "Task: %s, IsDone: %t\n", message.Task, message.IsDone)
-	}
+	// Устанавливаем заголовок ответа и отправляем JSON
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(messages)
 }
 
 func CreateMessage(w http.ResponseWriter, r *http.Request) {
-	messages := []Message{
-		{Task: "Новая задача #1", IsDone: true},
-		{Task: "Новая задача #2", IsDone: true},
-		{Task: "Новая задача #3", IsDone: false},
+	var message Message
+
+	// Декодируем JSON из тела запроса в структуру Messega
+	if err := json.NewDecoder(r.Body).Decode(&message); err != nil {
+		http.Error(w, "Неверный формат JSON", http.StatusBadRequest)
+		return
 	}
 
-	for _, message := range messages {
-		DB.Create(&message)
+	// Сохраняем сообщение в БД
+	if result := DB.Create(&message); result.Error != nil {
+		http.Error(w, "Ошибка создания сообщения", http.StatusInternalServerError)
+		return
 	}
 
-	fmt.Fprintln(w, "Сообщения успешно добавлены!")
+	// Устанавливаем заголовок ответа и отправляем JSON созданной сущности
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated) // HTTP 201 Created
+	json.NewEncoder(w).Encode(message)
 }
 
 func main() {
@@ -56,6 +60,7 @@ func main() {
 	//Автоматическая миграция модели Message
 	DB.AutoMigrate(&Message{})
 
+	// Настройка маршрутов
 	router := mux.NewRouter()
 	router.HandleFunc("/api/messages", CreateMessage).Methods("POST")
 	router.HandleFunc("/api/messages", GetMessage).Methods("GET")
