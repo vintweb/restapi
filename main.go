@@ -1,30 +1,15 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	"net/http"
+
+	"github.com/gorilla/mux"
 )
 
-// var counter int
 var task string
 
-// Структура для обработки JSON из POST-запроса
-type RequestBody struct {
-	Message string `json:"message"`
-}
-
-// func HelloHandler(w http.ResponseWriter, r *http.Request) {
-// 	fmt.Fprintln(w, "Hello World")
-// }
-
 func GetHandler(w http.ResponseWriter, r *http.Request) {
-	// if r.Method == http.MethodGet {
-	// 	fmt.Fprintln(w, "Counter равен", strconv.Itoa(counter))
-	// } else {
-	// 	fmt.Fprintln(w, "Поддерживается только метод GET")
-	// }
-
 	// GET handler для возврата приветствия с задачей
 
 	if task == "" {
@@ -34,50 +19,48 @@ func GetHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// func PostHandler(w http.ResponseWriter, r *http.Request) {
-// 	if r.Method == http.MethodPost {
-// 		counter++
-// 		fmt.Fprintln(w, "Counter увеличен на 1")
-// 	} else {
-// 		fmt.Fprintln(w, "Поддерживается только метод POST")
-// 	}
-// }
+func GetMessage(w http.ResponseWriter, r *http.Request) {
+	var messages []Message // Слайс для хранения записей
 
-// POST handler для записи значения в глобальную переменную
-func TaskHundler(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
-		http.Error(w, "Метод не поддерживается", http.StatusMethodNotAllowed)
-		return
-	}
-	var requestBody RequestBody
-
-	// Декодируем JSON из тела запроса
-	if err := json.NewDecoder(r.Body).Decode(&requestBody); err != nil {
-		http.Error(w, "Ошибка декодирования JSON", http.StatusBadRequest)
+	result := DB.Find(&messages)
+	if result.Error != nil {
+		fmt.Println(w, "Error fetching messages:", http.StatusInternalServerError)
 		return
 	}
 
-	// Записываем значение из JSON в глобальную переменную
-	task = requestBody.Message
-	fmt.Fprintf(w, "Задача '%s' сохранена!", task)
+	// Печатаем все меседжи
+	for _, message := range messages {
+		DB.Find(&message)
+		fmt.Fprintf(w, "Task: %s, IsDone: %t\n", message.Task, message.IsDone)
+	}
+}
+
+func CreateMessage(w http.ResponseWriter, r *http.Request) {
+	messages := []Message{
+		{Task: "Новая задача #1", IsDone: true},
+		{Task: "Новая задача #2", IsDone: true},
+		{Task: "Новая задача #3", IsDone: false},
+	}
+
+	for _, message := range messages {
+		DB.Create(&message)
+	}
+
+	fmt.Fprintln(w, "Сообщения успешно добавлены!")
 }
 
 func main() {
-	// 	http.HandleFunc("/hello", HelloHandler)
-	// 	http.ListenAndServe(":8080", nil)
+	// вызываем метод InitDB() из файла db.go
+	InitDB()
 
-	// router := mux.NewRouter()
-	// Наше приложение будет слушать запросы на localhost:8080/api/hello
-	// router.HandleFunc("/api/hello", HelloHandler).Methods("GET")
-	// http.ListenAndServe(":8080", router)
+	//Автоматическая миграция модели Message
+	DB.AutoMigrate(&Message{})
 
-	// Обработчик GET-запроса
-	http.HandleFunc("/get", GetHandler)
-	// http.HandleFunc("/post", PostHandler)
+	router := mux.NewRouter()
+	router.HandleFunc("/api/messages", CreateMessage).Methods("POST")
+	router.HandleFunc("/api/messages", GetMessage).Methods("GET")
 
-	// Обработчик POST-запроса Task
-	http.HandleFunc("/task", TaskHundler)
-
+	// Запуск сервера
 	fmt.Println("The server is running on port 8080...")
-	http.ListenAndServe(":8080", nil)
+	http.ListenAndServe(":8080", router)
 }
