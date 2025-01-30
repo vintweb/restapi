@@ -24,3 +24,6 @@ run:
 gen:
 	oapi-codegen -config openapi/.openapi -include-tags tasks -package tasks openapi/openapi.yaml > ./internal/web/tasks/api.gen.go
 
+# Вызываем make lint и смотрим на ошибки, которые он нам выдает
+lint:
+	golangci-lint run --out-format=colored-line-number
