@@ -23,7 +23,12 @@ run:
 # для генерации описанного в openapi
 gen:
 	oapi-codegen -config openapi/.openapi -include-tags tasks -package tasks openapi/openapi.yaml > ./internal/web/tasks/api.gen.go
+	oapi-codegen -config openapi/.openapi -include-tags users -package users openapi/openapi.yaml > ./internal/web/users/api.gen.go
 
 # Вызываем make lint и смотрим на ошибки, которые он нам выдает
 lint:
 	golangci-lint run --out-format=colored-line-number
+
+# для генерации users описанного в openapi
+gen-users:
+	oapi-codegen -config openapi/.openapi -include-tags users -package users openapi/openapi.yaml > ./internal/web/users/api.gen.go

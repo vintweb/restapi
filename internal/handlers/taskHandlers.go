@@ -13,6 +13,12 @@ type Handler struct {
 	Service *tasksService.TaskService
 }
 
+func NewHandler(service *tasksService.TaskService) *Handler {
+	return &Handler{
+		Service: service,
+	}
+}
+
 // DeleteTasksId implements tasks.StrictServerInterface.
 func (h *Handler) DeleteTasksId(ctx context.Context, request tasks.DeleteTasksIdRequestObject) (tasks.DeleteTasksIdResponseObject, error) {
 	// Преобразуем ID из `int` в `uint`
@@ -61,12 +67,6 @@ func (h *Handler) PatchTasksId(ctx context.Context, request tasks.PatchTasksIdRe
 		IsDone: &updatedTaskResult.IsDone,
 	}
 	return response, nil
-}
-
-func NewHandler(service *tasksService.TaskService) *Handler {
-	return &Handler{
-		Service: service,
-	}
 }
 
 func (h *Handler) GetTasks(_ context.Context, _ tasks.GetTasksRequestObject) (tasks.GetTasksResponseObject, error) {
