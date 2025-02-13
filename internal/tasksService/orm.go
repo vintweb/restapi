@@ -10,7 +10,14 @@ type Task struct {
 	// наш сервер будет ожидать json с полем text
 	Task string `json:"task"`
 	// в Go используем CamelCase, в JSON - snake
-	IsDone bool `json:"is_done"`
+	IsDone bool  `json:"is_done"`
+	User   *User `json:"user" gorm:"foreignKey:UserID;constraint:OnDelete:CASCADE;"` // Связь с пользователем через указатель
+	UserID uint  `json:"user_id"`
+}
+
+type User struct {
+	UserID uint   `json:"id"`
+	Email  string `json:"email"`
 }
 
 // Примерная структура для ответа на удаление

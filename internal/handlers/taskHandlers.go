@@ -94,25 +94,58 @@ func (h *Handler) GetTasks(_ context.Context, _ tasks.GetTasksRequestObject) (ta
 	return response, nil
 }
 
+// При создании задачи добавляется user_id, связывающий её с пользователем.
 func (h *Handler) PostTasks(_ context.Context, request tasks.PostTasksRequestObject) (tasks.PostTasksResponseObject, error) {
 	// Распаковываем тело запроса напрямую, без декодера!
 	taskRequest := request.Body
+
+	userID := int(*taskRequest.UserId)
+
 	// Обращаемся к сервису и создаем задачу
 	taskToCreate := tasksService.Task{
 		Task:   *taskRequest.Task,
 		IsDone: *taskRequest.IsDone,
+		UserID: uint(userID),
 	}
 	createdTask, err := h.Service.CreateTask(taskToCreate)
 
 	if err != nil {
 		return nil, err
 	}
+
+	userIDResponse := int(createdTask.UserID)
+
 	// создаем структуру респонс
 	response := tasks.PostTasks201JSONResponse{
 		Id:     &createdTask.ID,
 		Task:   &createdTask.Task,
 		IsDone: &createdTask.IsDone,
+		UserId: &userIDResponse,
 	}
 	// Просто возвращаем респонс!
+	return response, nil
+}
+
+// Все задачи пользователя
+func (h *Handler) GetUsersIdTasks(ctx context.Context, request tasks.GetUsersIdTasksRequestObject) (tasks.GetUsersIdTasksResponseObject, error) {
+	userID := uint(request.Id)
+
+	tasksList, err := h.Service.GetTasksForUser(userID)
+	if err != nil {
+		return nil, echo.NewHTTPError(http.StatusInternalServerError, "Ошибка получения задач пользователя")
+	}
+
+	response := tasks.GetUsersIdTasks200JSONResponse{}
+	for _, t := range tasksList {
+		userIDResponse := int(t.UserID) // Приведение uint → int
+		task := tasks.Task{
+			Id:     &t.ID,
+			Task:   &t.Task,
+			IsDone: &t.IsDone,
+			UserId: &userIDResponse, // Передача user_id
+		}
+		response = append(response, task)
+	}
+
 	return response, nil
 }

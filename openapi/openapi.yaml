@@ -1,9 +1,29 @@
----
 openapi: 3.0.0
 info:
   title: API
   version: 1.0.0
 paths:
+  /users/{id}/tasks:
+    get:
+      summary: Get all tasks for a user
+      tags:
+        - tasks
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            description: ID of the user
+      responses:
+        '200':
+          description: List of tasks for a user
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Task'
   /tasks:
     get:
       summary: Get all tasks
@@ -164,6 +184,9 @@ components:
           type: string
         is_done:
           type: boolean  # Исправил с "bool" на "boolean"
+        user_id:
+          type: integer
+          description: ID of the user who owns the task
     User:
       type: object
       properties:

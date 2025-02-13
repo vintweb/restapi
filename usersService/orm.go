@@ -14,4 +14,12 @@ type User struct {
 	DeletedAt *time.Time `json:"delete_at"`
 	CreatedAt time.Time  `json:"created_at"`
 	UpdatedAt time.Time  `json:"update_at"`
+	Tasks     []Task     `json:"tasks"` // Связь с задачами через указатель
+}
+
+type Task struct {
+	ID     uint   `json:"id"`
+	Task   string `json:"task"`
+	IsDone bool   `json:"is_done"`
+	UserID uint   `json:"user_id"`
 }

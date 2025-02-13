@@ -1,6 +1,10 @@
 package usersService
 
-import "gorm.io/gorm"
+import (
+	"restapi/internal/tasksService"
+
+	"gorm.io/gorm"
+)
 
 type UserRepository interface {
 	// Передаем в функцию user типа User из orm.go
@@ -12,6 +16,8 @@ type UserRepository interface {
 	PatchUserByID(id uint, User User) (User, error)
 	// Delete user by ID
 	DeleteUserByID(id uint) error
+	// GetTasksByUserID —  для получения всех задач конкретного пользователя.
+	GetTasksByUserID(userID uint) ([]tasksService.Task, error)
 }
 
 type userRepository struct {
@@ -73,4 +79,11 @@ func (r *userRepository) DeleteUserByID(id uint) error {
 
 	err = r.db.Delete(&user).Error
 	return err
+}
+
+// GetTasksByUserID —  для получения всех задач конкретного пользователя.
+func (r *userRepository) GetTasksByUserID(userID uint) ([]tasksService.Task, error) {
+	var tasks []tasksService.Task
+	err := r.db.Where("user_id = ?", userID).Find(&tasks).Error
+	return tasks, err
 }
