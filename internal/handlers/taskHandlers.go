@@ -137,12 +137,10 @@ func (h *Handler) GetUsersIdTasks(ctx context.Context, request tasks.GetUsersIdT
 
 	response := tasks.GetUsersIdTasks200JSONResponse{}
 	for _, t := range tasksList {
-		userIDResponse := int(t.UserID) // Приведение uint → int
 		task := tasks.Task{
 			Id:     &t.ID,
 			Task:   &t.Task,
 			IsDone: &t.IsDone,
-			UserId: &userIDResponse, // Передача user_id
 		}
 		response = append(response, task)
 	}
